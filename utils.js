@@ -97,7 +97,6 @@ const downloadFromRadiko = (authToken, url, duration, filename) => {
   command.push(`-fflags +discardcorrupt`);
   command.push(`-headers "X-Radiko-Authtoken: ${authToken}"`);
   command.push(`-y -i "${url}"`);
-  command.push(`-i "${metadata}"`);
   command.push(`-bsf:a aac_adtstoasc`);
   command.push(`-c copy "${filename}.m4a"`);
 
