@@ -1,6 +1,5 @@
 'use strict';
 
-const xml2js = require('xml2js');
 const { Buffer } = require('buffer');
 const { exec, spawn } = require('child_process');
 const moment = require('moment-timezone');
@@ -69,21 +68,6 @@ const authorization2 = (token, partialKey) => {
     .catch((err) => {
       throw new Error(`authorization2 failed ${err}`);
     });
-}
-
-
-const getStreamUrl = (station) => {
-  const URL = `http://radiko.jp/v2/station/stream_smh_multi/${station}.xml`
-  return fetch(URL)
-    .then(response => {
-      return response.text();
-    })
-    .then(text => {
-      return xml2js.parseStringPromise(text, { mergeAttrs: true });
-    })
-    .then(xml => {
-      return xml.urls?.url?.[0].playlist_create_url?.[0]
-    })
 }
 
 const toPartialKey = (key, offset, length) => {
@@ -158,7 +142,6 @@ module.exports = {
   format,
   authorization1,
   authorization2,
-  getStreamUrl,
   toPartialKey,
   downloadFromRadiko,
   downloadFromNhkOnDemand,
