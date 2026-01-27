@@ -1,8 +1,5 @@
 'use strict';
 
-const fetch = require('node-fetch');
-const https = require('https');
-const xml2js = require('xml2js');
 const { Buffer } = require('buffer');
 const { exec } = require('child_process');
 const moment = require('moment-timezone');
@@ -69,28 +66,14 @@ const authorization2 = (token, partialKey) => {
     });
 }
 
-
-const getStreamUrl = (station) => {
-  const URL = `http://radiko.jp/v2/station/stream_smh_multi/${station}.xml`
-  return fetch(URL)
-    .then(response => {
-      return response.text();
-    })
-    .then(text => {
-      return xml2js.parseStringPromise(text, { mergeAttrs: true });
-    })
-    .then(xml => {
-      return xml.urls?.url?.[0].playlist_create_url?.[0]
-    })
-}
-
 const toPartialKey = (key, offset, length) => {
   const partialKey = key.slice(offset, offset + length);
   return Buffer.from(partialKey).toString('base64');
 }
 
 const downloadFromRadiko = (authToken, url, duration, filename) => {
-  const command = [`ffmpeg`, `-loglevel error`];
+  // const command = [`ffmpeg`, `-loglevel error`];
+  const command = [`ffmpeg`, `-loglevel verbose`];
   if (duration) {
     command.push(`-t ${duration}`)
   }
@@ -99,6 +82,8 @@ const downloadFromRadiko = (authToken, url, duration, filename) => {
   command.push(`-y -i "${url}"`);
   command.push(`-bsf:a aac_adtstoasc`);
   command.push(`-c copy "${filename}.m4a"`);
+
+  console.log(command.join(' '))
 
   return new Promise((resolve, reject) => {
     exec(command.join(' '), (error, stdout, stderr) => {
@@ -147,7 +132,6 @@ module.exports = {
   format,
   authorization1,
   authorization2,
-  getStreamUrl,
   toPartialKey,
   downloadFromRadiko,
   downloadFromNhkOnDemand,
