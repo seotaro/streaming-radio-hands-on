@@ -1,11 +1,9 @@
 'use strict';
 
-const fetch = require('node-fetch');
-const https = require('https');
-const xml2js = require('xml2js');
 const { Buffer } = require('buffer');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const moment = require('moment-timezone');
+const crypto = require('crypto')
 
 const now = () => {
   return (new Date()).toISOString();
@@ -52,7 +50,7 @@ const authorization2 = (token, partialKey) => {
   return fetch(URL, {
     method: 'GET',
     headers: {
-      'X-Radiko-User': 'dummy-user',
+      'X-Radiko-User': 'dummy_user',
       'X-Radiko-Device': 'pc',
       'X-Radiko-AuthToken': token,
       'X-Radiko-PartialKey': partialKey,
@@ -60,27 +58,16 @@ const authorization2 = (token, partialKey) => {
   })
     .then(response => {
       if (response.status !== 200) throw new Error(`status=${response.status}`);
-
-
+      return response.text();
+    })
+    .then(text => {
+      // text例）JP13,東京都,tokyo Japan
+      const [areaId, prefecture, prefectureAndCountry] = text.split(',').map(s => s.trim());
+      return areaId.trim();
     })
     .catch((err) => {
       throw new Error(`authorization2 failed ${err}`);
     });
-}
-
-
-const getStreamUrl = (channel) => {
-  const URL = `http://radiko.jp/v2/station/stream_smh_multi/${channel}.xml`
-  return fetch(URL)
-    .then(response => {
-      return response.text();
-    })
-    .then(text => {
-      return xml2js.parseStringPromise(text, { mergeAttrs: true });
-    })
-    .then(xml => {
-      return xml.urls?.url?.[0].playlist_create_url?.[0]
-    })
 }
 
 const toPartialKey = (key, offset, length) => {
@@ -89,24 +76,33 @@ const toPartialKey = (key, offset, length) => {
 }
 
 const downloadFromRadiko = (authToken, url, duration, filename) => {
-  const command = [`ffmpeg`, `-loglevel error`];
+  const args = ['-loglevel', 'error'];
   if (duration) {
-    command.push(`-t ${duration}`)
+    args.push('-t', String(duration));
   }
-  command.push(`-fflags +discardcorrupt`);
-  command.push(`-headers "X-Radiko-Authtoken: ${authToken}"`);
-  command.push(`-y -i "${url}"`);
-  command.push(`-bsf:a aac_adtstoasc`);
-  command.push(`-c copy "${filename}.m4a"`);
+  args.push('-fflags', '+discardcorrupt');
+  args.push('-headers', `X-Radiko-AuthToken: ${authToken}\r\n`);
+  args.push('-http_seekable', '0');
+  args.push('-y', '-i', url);
+  args.push('-bsf:a', 'aac_adtstoasc');
+  args.push('-c', 'copy', `${filename}.m4a`);
 
   return new Promise((resolve, reject) => {
-    exec(command.join(' '), (error, stdout, stderr) => {
-      if (error) {
-        reject(error);
+    const ffmpeg = spawn('ffmpeg', args);
+    let stderr = '';
+    ffmpeg.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    ffmpeg.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`ffmpeg exited with code ${code}: ${stderr}`));
       } else {
         console.log(now(), 'downloaded', filename);
         resolve();
       }
+    });
+    ffmpeg.on('error', (err) => {
+      reject(err);
     });
   })
 }
@@ -134,13 +130,20 @@ const downloadFromNhkOnDemand = (url, duration, filename) => {
   })
 }
 
+// lsid はランダムな文字列で良いっぽい
+const lsid = () => {
+  const now = new Date();
+  const md5 = crypto.createHash('md5')
+  return md5.update(`${now.getTime()}`, 'binary').digest('hex')
+}
+
 module.exports = {
   now,
   format,
   authorization1,
   authorization2,
-  getStreamUrl,
   toPartialKey,
   downloadFromRadiko,
   downloadFromNhkOnDemand,
+  lsid,
 };
