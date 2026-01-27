@@ -1,7 +1,6 @@
 'use strict';
 
 const moment = require('moment-timezone');
-const crypto = require('crypto')
 const utils = require('./utils.js');
 
 if (process.argv.length !== 6) {
@@ -17,13 +16,6 @@ const START = new Date(process.argv[3]);
 const END = new Date(process.argv[4]);
 const FILENAME = process.argv[5];
 
-// lsid はランダムな文字列で良いっぽい
-const lsid = () => {
-  const now = new Date();
-  const md5 = crypto.createHash('md5')
-  return md5.update(`${now.getTime()}`, 'binary').digest('hex')
-}
-
 (async () => {
   try {
     const [token, partialKey] = await utils.authorization1();
@@ -35,7 +27,7 @@ const lsid = () => {
     // https://radiko.jp/v3/station/stream/pc_html5/${CHANNEL}.xml の定義から
     const URL = 'https://radiko.jp/v2/api/ts/playlist.m3u8';
 
-    const url = `${URL}?station_id=${CHANNEL}&start_at=${start}&ft=${start}&end_at=${end}&to=${end}&l=15&lsid=${lsid()}&type=b`;
+    const url = `${URL}?station_id=${CHANNEL}&start_at=${start}&ft=${start}&end_at=${end}&to=${end}&l=15&lsid=${utils.lsid()}&type=b`;
     await utils.downloadFromRadiko(token, url, null, FILENAME);
 
   } catch (err) {

@@ -1,7 +1,6 @@
 'use strict';
 
 const fetch = require('node-fetch');
-const https = require('https');
 const xml2js = require('xml2js');
 const { Buffer } = require('buffer');
 const { exec } = require('child_process');
@@ -52,7 +51,7 @@ const authorization2 = (token, partialKey) => {
   return fetch(URL, {
     method: 'GET',
     headers: {
-      'X-Radiko-User': 'dummy-user',
+      'X-Radiko-User': 'dummy_user',
       'X-Radiko-Device': 'pc',
       'X-Radiko-AuthToken': token,
       'X-Radiko-PartialKey': partialKey,
@@ -69,8 +68,8 @@ const authorization2 = (token, partialKey) => {
 }
 
 
-const getStreamUrl = (channel) => {
-  const URL = `http://radiko.jp/v2/station/stream_smh_multi/${channel}.xml`
+const getStreamUrl = (station) => {
+  const URL = `http://radiko.jp/v2/station/stream_smh_multi/${station}.xml`
   return fetch(URL)
     .then(response => {
       return response.text();
@@ -134,6 +133,13 @@ const downloadFromNhkOnDemand = (url, duration, filename) => {
   })
 }
 
+// lsid はランダムな文字列で良いっぽい
+const lsid = () => {
+  const now = new Date();
+  const md5 = crypto.createHash('md5')
+  return md5.update(`${now.getTime()}`, 'binary').digest('hex')
+}
+
 module.exports = {
   now,
   format,
@@ -143,4 +149,5 @@ module.exports = {
   toPartialKey,
   downloadFromRadiko,
   downloadFromNhkOnDemand,
+  lsid,
 };
