@@ -1,6 +1,5 @@
 'use strict';
 
-const fetch = require('node-fetch');
 const xml2js = require('xml2js');
 const { Buffer } = require('buffer');
 const { exec } = require('child_process');
