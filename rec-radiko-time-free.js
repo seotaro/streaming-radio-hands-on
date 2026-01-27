@@ -23,11 +23,11 @@ const FILENAME = process.argv[5];
 
     const start = moment(START).tz("Asia/Tokyo").format('YYYYMMDDHHmmss');
     const end = moment(END).tz("Asia/Tokyo").format('YYYYMMDDHHmmss');
+    const seek = moment(START.getTime() + 1000).tz("Asia/Tokyo").format('YYYYMMDDHHmmss');
 
     // https://radiko.jp/v3/station/stream/pc_html5/${CHANNEL}.xml の定義から
-    const URL = 'https://radiko.jp/v2/api/ts/playlist.m3u8';
+    const url = `https://tf-f-rpaa-radiko.smartstream.ne.jp/tf/playlist.m3u8?station_id=${CHANNEL}&start_at=${start}&ft=${start}&end_at=${end}&to=${end}&seek=${seek}&preroll=0&l=15&lsid=${utils.lsid()}&type=b`;
 
-    const url = `${URL}?station_id=${CHANNEL}&start_at=${start}&ft=${start}&end_at=${end}&to=${end}&l=15&lsid=${utils.lsid()}&type=b`;
     await utils.downloadFromRadiko(token, url, null, FILENAME);
 
   } catch (err) {

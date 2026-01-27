@@ -4,6 +4,7 @@ const xml2js = require('xml2js');
 const { Buffer } = require('buffer');
 const { exec } = require('child_process');
 const moment = require('moment-timezone');
+const crypto = require('crypto')
 
 const now = () => {
   return (new Date()).toISOString();
