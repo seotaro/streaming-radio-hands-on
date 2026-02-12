@@ -1,5 +1,28 @@
 # ラジオストリーミングの保存 （node.js 版）
 
+## radikoの非公式API
+
+### 放送局
+
+`https://radiko.jp/v3/station/list/{area_id}.xml`
+
+area_id 例）
+
+- `JP12`: 千葉県 [https://radiko.jp/v3/station/list/JP12.xml](https://radiko.jp/v3/station/list/JP12.xml)
+- `JP13`: 東京都 [https://radiko.jp/v3/station/list/JP13.xml](https://radiko.jp/v3/station/list/JP13.xml)
+- `JP27`: 大阪府 [https://radiko.jp/v3/station/list/JP27.xml](https://radiko.jp/v3/station/list/JP27.xml)
+- `full`: 全国 [https://radiko.jp/v3/station/list/full.xml](https://radiko.jp/v3/station/list/full.xml)
+
+### 番組表
+
+`https://radiko.jp/v3/program/${day}/${area_id}.xml`
+
+day 例）
+
+- `today`: [http://radiko.jp/v3/program/today/JP13.xml](http://radiko.jp/v3/program/today/JP13.xml)
+- `tomorrow`: [http://radiko.jp/v3/program/tomorrow/JP13.xml](http://radiko.jp/v3/program/tomorrow/JP13.xml)
+- `date/20260211`: [https://radiko.jp/v3/program/date/20260211/JP13.xml](https://radiko.jp/v3/program/date/20260211/JP13.xml)
+
 ## らじる★らじる（NHK on Demand）
 
 ```bash
