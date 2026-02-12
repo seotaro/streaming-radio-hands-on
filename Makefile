@@ -20,10 +20,5 @@ init:
 	sudo usermod -aG docker ubuntu
 	sudo chmod 666 /var/run/docker.sock
 
-start:	
-	docker compose up --build -d
-
-stop:
-	docker compose down
-
-	
+run:
+	docker compose run --rm hands-on /bin/bash
