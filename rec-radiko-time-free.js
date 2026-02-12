@@ -19,7 +19,8 @@ const FILENAME = process.argv[5];
 (async () => {
   try {
     const [token, partialKey] = await utils.authorization1();
-    await utils.authorization2(token, partialKey);
+    const area = await utils.authorization2(token, partialKey);
+    console.log(`Authorized. token=${token}, area=${area}`);
 
     const start = moment(START).tz("Asia/Tokyo").format('YYYYMMDDHHmmss');
     const end = moment(END).tz("Asia/Tokyo").format('YYYYMMDDHHmmss');
