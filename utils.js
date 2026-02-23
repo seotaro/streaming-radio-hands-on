@@ -47,27 +47,7 @@ const authorization1 = () => {
 
 const authorization2 = (token, partialKey) => {
   const URL = `https://radiko.jp/v2/api/auth2`;
-  return fetch(URL, {
-    method: 'GET',
-    headers: {
-      'X-Radiko-User': 'dummy_user',
-      'X-Radiko-Device': 'pc',
-      'X-Radiko-AuthToken': token,
-      'X-Radiko-PartialKey': partialKey,
-    },
-  })
-    .then(response => {
-      if (response.status !== 200) throw new Error(`status=${response.status}`);
-      return response.text();
-    })
-    .then(text => {
-      // text例）JP13,東京都,tokyo Japan
-      const [areaId, prefecture, prefectureAndCountry] = text.split(',').map(s => s.trim());
-      return areaId.trim();
-    })
-    .catch((err) => {
-      throw new Error(`authorization2 failed ${err}`);
-    });
+    return areaId;
 }
 
 const toPartialKey = (key, offset, length) => {
