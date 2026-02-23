@@ -14,40 +14,59 @@ const format = (date) => {
 }
 
 // AuthToken と PartialKey を返す。
-const authorization1 = () => {
+const authorization1 = async () => {
   const AUTHKEY = 'bcd151073c03b352e1ef2fd66c32209da9ca0afa';
   const URL = `https://radiko.jp/v2/api/auth1`;
 
-  return fetch(URL, {
-    method: 'GET',
-    headers: {
-      'X-Radiko-App': 'pc_html5',
-      'X-Radiko-App-Version': '0.0.1',
-      'X-Radiko-User': 'dummy_user',
-      'X-Radiko-Device': 'pc',
-    },
-  })
-    .then(response => {
-      if (response.status !== 200) throw new Error(`status=${response.status}`);
-      if (!response.headers.has('x-radiko-authtoken')
-        || !response.headers.has('x-radiko-keyoffset')
-        || !response.headers.has('x-radiko-keylength'))
-        throw new Error('header is missing');
-
-      const authtoken = response.headers.get('x-radiko-authtoken');
-      const partialKey = toPartialKey(AUTHKEY
-        , Number(response.headers.get('x-radiko-keyoffset'))
-        , Number(response.headers.get('x-radiko-keylength')));
-      return [authtoken, partialKey];
-    })
-    .catch((err) => {
-      throw new Error(`authorization1 failed ${err}`);
+  try {
+    const response = await fetch(URL, {
+      method: 'GET',
+      headers: {
+        'X-Radiko-App': 'pc_html5',
+        'X-Radiko-App-Version': '0.0.1',
+        'X-Radiko-User': 'dummy_user',
+        'X-Radiko-Device': 'pc',
+      },
     });
+    if (response.status !== 200) throw new Error(`status=${response.status}`);
+    if (!response.headers.has('x-radiko-authtoken')
+      || !response.headers.has('x-radiko-keyoffset')
+      || !response.headers.has('x-radiko-keylength'))
+      throw new Error('header is missing');
+
+    const authtoken = response.headers.get('x-radiko-authtoken');
+    const partialKey = toPartialKey(AUTHKEY
+      , Number(response.headers.get('x-radiko-keyoffset'))
+      , Number(response.headers.get('x-radiko-keylength')));
+    return [authtoken, partialKey];
+
+  } catch (err) {
+    throw new Error(`authorization1 failed ${err}`);
+  }
 };
 
-const authorization2 = (token, partialKey) => {
+const authorization2 = async (token, partialKey) => {
   const URL = `https://radiko.jp/v2/api/auth2`;
+  try {
+    const response = await fetch(URL, {
+      method: 'GET',
+      headers: {
+        'X-Radiko-User': 'dummy_user',
+        'X-Radiko-Device': 'pc',
+        'X-Radiko-AuthToken': token,
+        'X-Radiko-PartialKey': partialKey,
+      },
+    });
+
+    if (response.status !== 200) throw new Error(`status=${response.status}`);
+    // text 例）JP13,東京都,tokyo Japan
+    const text = await response.text();
+    const [areaId] = text.split(',').map(s => s.trim());
     return areaId;
+
+  } catch (err) {
+    throw new Error(`authorization2 failed ${err}`);
+  }
 }
 
 const toPartialKey = (key, offset, length) => {
