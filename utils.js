@@ -132,9 +132,9 @@ const downloadFromNhkOnDemand = (url, duration, filename) => {
 
 // lsid はランダムな文字列で良いっぽい
 const lsid = () => {
-  const now = new Date();
+  const date = new Date();
   const md5 = crypto.createHash('md5')
-  return md5.update(`${now.getTime()}`, 'binary').digest('hex')
+  return md5.update(`${date.getTime()}`, 'binary').digest('hex')
 }
 
 module.exports = {
