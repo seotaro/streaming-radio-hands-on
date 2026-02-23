@@ -1,7 +1,7 @@
 'use strict';
 
 const { Buffer } = require('buffer');
-const { exec, spawn } = require('child_process');
+const { spawn } = require('child_process');
 const moment = require('moment-timezone');
 const crypto = require('crypto')
 
@@ -14,60 +14,59 @@ const format = (date) => {
 }
 
 // AuthToken と PartialKey を返す。
-const authorization1 = () => {
+const authorization1 = async () => {
   const AUTHKEY = 'bcd151073c03b352e1ef2fd66c32209da9ca0afa';
   const URL = `https://radiko.jp/v2/api/auth1`;
 
-  return fetch(URL, {
-    method: 'GET',
-    headers: {
-      'X-Radiko-App': 'pc_html5',
-      'X-Radiko-App-Version': '0.0.1',
-      'X-Radiko-User': 'dummy_user',
-      'X-Radiko-Device': 'pc',
-    },
-  })
-    .then(response => {
-      if (response.status !== 200) throw new Error(`status=${response.status}`);
-      if (!response.headers.has('x-radiko-authtoken')
-        || !response.headers.has('x-radiko-keyoffset')
-        || !response.headers.has('x-radiko-keylength'))
-        throw new Error('header is missing');
-
-      const authtoken = response.headers.get('x-radiko-authtoken');
-      const partialKey = toPartialKey(AUTHKEY
-        , Number(response.headers.get('x-radiko-keyoffset'))
-        , Number(response.headers.get('x-radiko-keylength')));
-      return [authtoken, partialKey];
-    })
-    .catch((err) => {
-      throw new Error(`authorization1 failed ${err}`);
+  try {
+    const response = await fetch(URL, {
+      method: 'GET',
+      headers: {
+        'X-Radiko-App': 'pc_html5',
+        'X-Radiko-App-Version': '0.0.1',
+        'X-Radiko-User': 'dummy_user',
+        'X-Radiko-Device': 'pc',
+      },
     });
+    if (response.status !== 200) throw new Error(`status=${response.status}`);
+    if (!response.headers.has('x-radiko-authtoken')
+      || !response.headers.has('x-radiko-keyoffset')
+      || !response.headers.has('x-radiko-keylength'))
+      throw new Error('header is missing');
+
+    const authtoken = response.headers.get('x-radiko-authtoken');
+    const partialKey = toPartialKey(AUTHKEY
+      , Number(response.headers.get('x-radiko-keyoffset'))
+      , Number(response.headers.get('x-radiko-keylength')));
+    return [authtoken, partialKey];
+
+  } catch (err) {
+    throw new Error(`authorization1 failed ${err}`);
+  }
 };
 
-const authorization2 = (token, partialKey) => {
+const authorization2 = async (token, partialKey) => {
   const URL = `https://radiko.jp/v2/api/auth2`;
-  return fetch(URL, {
-    method: 'GET',
-    headers: {
-      'X-Radiko-User': 'dummy_user',
-      'X-Radiko-Device': 'pc',
-      'X-Radiko-AuthToken': token,
-      'X-Radiko-PartialKey': partialKey,
-    },
-  })
-    .then(response => {
-      if (response.status !== 200) throw new Error(`status=${response.status}`);
-      return response.text();
-    })
-    .then(text => {
-      // text例）JP13,東京都,tokyo Japan
-      const [areaId, prefecture, prefectureAndCountry] = text.split(',').map(s => s.trim());
-      return areaId.trim();
-    })
-    .catch((err) => {
-      throw new Error(`authorization2 failed ${err}`);
+  try {
+    const response = await fetch(URL, {
+      method: 'GET',
+      headers: {
+        'X-Radiko-User': 'dummy_user',
+        'X-Radiko-Device': 'pc',
+        'X-Radiko-AuthToken': token,
+        'X-Radiko-PartialKey': partialKey,
+      },
     });
+
+    if (response.status !== 200) throw new Error(`status=${response.status}`);
+    // text 例）JP13,東京都,tokyo Japan
+    const text = await response.text();
+    const [areaId] = text.split(',').map(s => s.trim());
+    return areaId;
+
+  } catch (err) {
+    throw new Error(`authorization2 failed ${err}`);
+  }
 }
 
 const toPartialKey = (key, offset, length) => {
@@ -108,33 +107,40 @@ const downloadFromRadiko = (authToken, url, duration, filename) => {
 }
 
 const downloadFromNhkOnDemand = (url, duration, filename) => {
-  const command = [
-    `ffmpeg`,
-    `-loglevel error`,
-    `-t ${duration}`,
-    `-fflags +discardcorrupt`,
-    `-y -i ${url}`,
-    `-bsf:a aac_adtstoasc`,
-    `-c copy "${filename}.m4a"`
+  const args = [
+    '-loglevel', 'error',
+    '-t', String(duration),
+    '-fflags', '+discardcorrupt',
+    '-y', '-i', url,
+    '-bsf:a', 'aac_adtstoasc',
+    '-c', 'copy', `${filename}.m4a`,
   ];
 
   return new Promise((resolve, reject) => {
-    exec(command.join(' '), (error, stdout, stderr) => {
-      if (error) {
-        reject(error);
+    const ffmpeg = spawn('ffmpeg', args);
+    let stderr = '';
+    ffmpeg.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    ffmpeg.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`ffmpeg exited with code ${code}: ${stderr}`));
       } else {
         console.log(now(), 'downloaded', filename);
         resolve();
       }
+    });
+    ffmpeg.on('error', (err) => {
+      reject(err);
     });
   })
 }
 
 // lsid はランダムな文字列で良いっぽい
 const lsid = () => {
-  const now = new Date();
+  const date = new Date();
   const md5 = crypto.createHash('md5')
-  return md5.update(`${now.getTime()}`, 'binary').digest('hex')
+  return md5.update(`${date.getTime()}`, 'binary').digest('hex')
 }
 
 module.exports = {
