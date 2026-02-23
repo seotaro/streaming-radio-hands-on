@@ -108,24 +108,31 @@ const downloadFromRadiko = (authToken, url, duration, filename) => {
 }
 
 const downloadFromNhkOnDemand = (url, duration, filename) => {
-  const command = [
-    `ffmpeg`,
-    `-loglevel error`,
-    `-t ${duration}`,
-    `-fflags +discardcorrupt`,
-    `-y -i ${url}`,
-    `-bsf:a aac_adtstoasc`,
-    `-c copy "${filename}.m4a"`
+  const args = [
+    '-loglevel', 'error',
+    '-t', String(duration),
+    '-fflags', '+discardcorrupt',
+    '-y', '-i', url,
+    '-bsf:a', 'aac_adtstoasc',
+    '-c', 'copy', `${filename}.m4a`,
   ];
 
   return new Promise((resolve, reject) => {
-    exec(command.join(' '), (error, stdout, stderr) => {
-      if (error) {
-        reject(error);
+    const ffmpeg = spawn('ffmpeg', args);
+    let stderr = '';
+    ffmpeg.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    ffmpeg.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`ffmpeg exited with code ${code}: ${stderr}`));
       } else {
         console.log(now(), 'downloaded', filename);
         resolve();
       }
+    });
+    ffmpeg.on('error', (err) => {
+      reject(err);
     });
   })
 }
