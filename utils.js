@@ -1,7 +1,7 @@
 'use strict';
 
 const { Buffer } = require('buffer');
-const { exec, spawn } = require('child_process');
+const { spawn } = require('child_process');
 const moment = require('moment-timezone');
 const crypto = require('crypto')
 
