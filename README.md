@@ -16,12 +16,6 @@ node rec-nhk-on-demand.js {r1|r2|r3} duration filename
 
 ### ダウンロード
 
-リアルタイム
-
-```bash
-node rec-radiko.js {TBS|QRR|LFR|INT|FMT|FMJ|JORF|BAYFM78|NACK5|YFM|...} duration filename
-```
-
 タイムフリー
 
 ```bash
